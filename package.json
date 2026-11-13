@@ -1,0 +1,13 @@
+{
+  "name": "ct-contrast-selector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CT 对比剂智能选择课程演示与软件测试",
+  "scripts": {
+    "test:algorithm": "python tests/01_算法一致性测试.py",
+    "test:browser": "node tests/03_浏览器验收.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

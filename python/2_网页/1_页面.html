@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CT 对比剂智能选择系统 · 分步评估</title>
+<link rel="stylesheet" href="/2_样式.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" fill="none" stroke="#0b5c8a" stroke-width="1.6" opacity=".35"/>
+        <circle cx="16" cy="16" r="9" fill="none" stroke="#0d9488" stroke-width="1.6" opacity=".55"/>
+        <path d="M16 6.5v19M6.5 16h19" stroke="#0b5c8a" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="4.2" fill="#0d9488"/>
+      </svg>
+      <div class="brand-text">
+        <h1>CT 对比剂智能选择系统</h1>
+        <p>Step-by-step iodinated contrast regimen</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="ver">v5.1 · 研究用</span>
+      <button class="btn btn-ghost" id="btnDemo" type="button">看示例</button>
+      <button class="btn btn-ghost" id="btnReset" type="button">重新开始</button>
+      <button class="btn btn-primary hidden" id="btnPrint" type="button">导出报告</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================ 向导 ============================ -->
+<div class="wizard" id="wizard">
+
+  <nav class="stepper" id="stepper">
+    <ol>
+      <li data-goto="1" class="active"><span class="idx">1</span><div><b>基础信息</b><i>年龄 · 性别 · 身高 · 体重</i></div></li>
+      <li data-goto="2"><span class="idx">2</span><div><b>检查方案</b><i>部位 · 心率 · 注射时长</i></div></li>
+      <li data-goto="3"><span class="idx">3</span><div><b>肾功能与代谢</b><i>肌酐 · eGFR · 二甲双胍</i></div></li>
+      <li data-goto="4"><span class="idx">4</span><div><b>心功能</b><i>NYHA · EF · BNP · 血压</i></div></li>
+      <li data-goto="5"><span class="idx">5</span><div><b>过敏与病史</b><i>既往反应 · 哮喘 · 甲亢</i></div></li>
+      <li data-goto="6"><span class="idx">6</span><div><b>静脉通路</b><i>留置针 · 部位 · 静脉条件</i></div></li>
+    </ol>
+    <div class="step-progress">
+      <div class="bar-bg"><i id="progressFill"></i></div>
+      <span id="progressText">第 1 / 6 步</span>
+    </div>
+  </nav>
+
+  <main class="stage">
+    <form id="form" autocomplete="off" novalidate>
+
+      <!-- ---------- Step 1 ---------- -->
+      <section class="step-panel" data-step="1">
+        <div class="step-head">
+          <h2>先填患者的基本体型参数</h2>
+          <p>身高体重用于计算 BMI 与体表面积，是碘剂量推算的基准。带 <em>*</em> 为必填。</p>
+        </div>
+        <div class="grid g3">
+          <label class="field span2"><span>姓名 / 病历号 <em>可选</em></span>
+            <input type="text" id="pName" placeholder="如：张三 / 00123456"></label>
+          <label class="field"><span>年龄 <em>岁 *</em></span>
+            <input type="number" id="age" data-required data-min="1" data-max="120" placeholder="如 58"></label>
+          <div class="field">
+            <span>性别 <em>*</em></span>
+            <div class="chips" data-radio="sex">
+              <label class="chip"><input type="radio" name="sex" value="male"><span>男</span></label>
+              <label class="chip"><input type="radio" name="sex" value="female"><span>女</span></label>
+            </div>
+          </div>
+          <label class="field"><span>身高 <em>cm *</em></span>
+            <input type="number" id="height" data-required data-min="80" data-max="220" placeholder="如 172"></label>
+          <label class="field"><span>体重 <em>kg *</em></span>
+            <input type="number" id="weight" data-required data-min="10" data-max="220" step="0.5" placeholder="如 70"></label>
+        </div>
+        <div class="live-strip">
+          <div><span>BMI</span><b id="outBmi">待填写</b></div>
+          <div><span>体表面积</span><b id="outBsa">待填写</b></div>
+          <div><span>体型判定</span><b id="outBody">待填写</b></div>
+        </div>
+      </section>
+
+      <!-- ---------- Step 2 ---------- -->
+      <section class="step-panel hidden" data-step="2">
+        <div class="step-head">
+          <h2>这次要做哪种增强检查</h2>
+          <p>检查类型决定目标碘流率与注射时长，是方案的核心输入。</p>
+        </div>
+        <div class="grid g2">
+          <label class="field span2"><span>检查类型 <em>*</em></span>
+            <select id="exam" data-required>
+              <option value="">请选择检查部位…</option>
+              <option value="coronary">冠状动脉 CTA</option>
+              <option value="triple">胸痛三联 (TRO)</option>
+              <option value="headneck">头颈动脉 CTA</option>
+              <option value="ctpa">肺动脉 CTA (CTPA)</option>
+              <option value="aorta">主动脉 CTA</option>
+              <option value="abdomen">腹部常规增强</option>
+              <option value="liver">肝脏动态三期</option>
+              <option value="ctu">泌尿系 CTU</option>
+              <option value="leg">下肢动脉 CTA</option>
+              <option value="perfusion">CT 灌注 (CTP)</option>
+              <option value="routine">其他部位常规增强</option>
+            </select>
+          </label>
+          <label class="field"><span>心率 <em>次/分</em></span>
+            <input type="number" id="hr" data-min="30" data-max="220" placeholder="冠脉 CTA 建议填写"></label>
+          <label class="field"><span>注射时长 <em>s · 留空自动</em></span>
+            <input type="number" id="dur" data-min="4" data-max="90" placeholder="自动"></label>
+          <label class="field"><span>目标流率上限 <em>mL/s · 留空自动</em></span>
+            <input type="number" id="maxflow" data-min="1" data-max="8" step="0.1" placeholder="自动"></label>
+          <div class="field">
+            <span>技术条件</span>
+            <div class="chips chips-wrap">
+              <label class="chip"><input type="checkbox" id="lowdose"><span>低 kV / 低剂量</span></label>
+              <label class="chip"><input type="checkbox" id="dualflow"><span>双筒双流</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box"><b>为什么要填心率</b><span>心率 &gt; 80 时冠脉 CTA 需延长注射或先控制心率，系统会提示 β 阻滞剂准备。</span></div>
+      </section>
+
+      <!-- ---------- Step 3 ---------- -->
+      <section class="step-panel hidden" data-step="3">
+        <div class="step-head">
+          <h2>肾功能与代谢情况</h2>
+          <p>血肌酐 + 年龄 + 性别自动算出 eGFR（CKD-EPI 2021 免种族公式）。留空则跳过肾功能评估。</p>
+        </div>
+        <div class="grid g3">
+          <label class="field"><span>血肌酐 <em>μmol/L</em></span>
+            <input type="number" id="scr" data-min="10" data-max="900" placeholder="如 78"></label>
+          <label class="field"><span>二甲双胍</span>
+            <select id="metformin">
+              <option value="none">未使用</option>
+              <option value="lt1000">使用中 &lt; 1000 mg/d</option>
+              <option value="1000">1000 mg/d</option>
+              <option value="1500">1500 mg/d</option>
+              <option value="2000">2000 mg/d</option>
+              <option value="gt2000">≥ 2000 mg/d</option>
+            </select>
+          </label>
+          <label class="field"><span>透析状态</span>
+            <select id="dialysis">
+              <option value="none">无</option>
+              <option value="hd">规律血液透析</option>
+              <option value="pd">腹膜透析</option>
+              <option value="crrt">CRRT</option>
+            </select>
+          </label>
+        </div>
+        <div class="live-strip live-strip-4">
+          <div><span>eGFR</span><b id="outEgfr">待填写肌酐</b></div>
+          <div><span>CKD 分期</span><b id="outCkd">—</b></div>
+          <div><span>肌酐清除率</span><b id="outCcr">—</b></div>
+          <div><span>提示</span><b id="outRenalHint" class="small">—</b></div>
+        </div>
+        <p class="group-title">同时存在以下情况（可多选）</p>
+        <div class="grid g3 checks">
+          <label class="check"><input type="checkbox" id="dm"><span>糖尿病</span></label>
+          <label class="check"><input type="checkbox" id="singleKidney"><span>单肾 / 肾切除</span></label>
+          <label class="check"><input type="checkbox" id="myeloma"><span>多发性骨髓瘤</span></label>
+          <label class="check"><input type="checkbox" id="dehydration"><span>脱水 / 低血容量</span></label>
+          <label class="check"><input type="checkbox" id="recentCM"><span>48 h 内用过碘对比剂</span></label>
+          <label class="check"><input type="checkbox" id="nephrotox"><span>合并肾毒性药物</span></label>
+        </div>
+      </section>
+
+      <!-- ---------- Step 4 ---------- -->
+      <section class="step-panel hidden" data-step="4">
+        <div class="step-head">
+          <h2>心功能与容量状态</h2>
+          <p>心功能不全需要限制对比剂总量和注射流率。没有心脏病史可直接下一步。</p>
+        </div>
+        <div class="grid g2">
+          <label class="field"><span>NYHA 心功能分级</span>
+            <select id="nyha">
+              <option value="0">无心力衰竭</option>
+              <option value="1">I 级 — 活动不受限</option>
+              <option value="2">II 级 — 轻度受限</option>
+              <option value="3">III 级 — 明显受限</option>
+              <option value="4">IV 级 — 静息有症状</option>
+            </select>
+          </label>
+          <label class="field"><span>LVEF <em>%</em></span>
+            <input type="number" id="ef" data-min="5" data-max="85" placeholder="如 62，未查可留空"></label>
+          <label class="field"><span>BNP / NT-proBNP</span>
+            <select id="bnp">
+              <option value="0">未查 / 正常</option>
+              <option value="1">轻度升高 (1–2×)</option>
+              <option value="2">中度升高 (2–5×)</option>
+              <option value="3">重度升高 (&gt;5×)</option>
+            </select>
+          </label>
+          <label class="field"><span>血压状态</span>
+            <select id="bp">
+              <option value="normal">稳定</option>
+              <option value="low">偏低 / 需升压药</option>
+              <option value="shock">休克</option>
+            </select>
+          </label>
+        </div>
+        <p class="group-title">合并情况（可多选）</p>
+        <div class="grid g3 checks">
+          <label class="check"><input type="checkbox" id="pah"><span>肺动脉高压</span></label>
+          <label class="check"><input type="checkbox" id="as"><span>重度主动脉瓣狭窄</span></label>
+          <label class="check"><input type="checkbox" id="chfHosp"><span>近 3 月心衰住院</span></label>
+        </div>
+      </section>
+
+      <!-- ---------- Step 5 ---------- -->
+      <section class="step-panel hidden" data-step="5">
+        <div class="step-head">
+          <h2>过敏史与特殊病史</h2>
+          <p>决定是否需要预处理，以及是否需要改用其他检查方式。没有相关病史跳过即可。</p>
+        </div>
+        <div class="grid g2">
+          <label class="field"><span>既往碘对比剂反应</span>
+            <select id="priorReaction">
+              <option value="0">无 / 首次使用</option>
+              <option value="1">轻度（皮疹、恶心、一过性荨麻疹）</option>
+              <option value="2">中度（明显荨麻疹、支气管痉挛）</option>
+              <option value="3">重度（喉头水肿、休克、需抢救）</option>
+            </select>
+          </label>
+          <label class="field"><span>哮喘</span>
+            <select id="asthma">
+              <option value="0">无</option>
+              <option value="1">轻度 / 控制良好</option>
+              <option value="2">重度 / 未控制</option>
+              <option value="3">哮喘 + 其他过敏史</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="group-title">药物过敏史</p>
+        <div class="grid g3 checks">
+          <label class="check"><input type="checkbox" id="drugBeta"><span>青霉素类</span></label>
+          <label class="check"><input type="checkbox" id="drugCeph"><span>头孢类</span></label>
+          <label class="check"><input type="checkbox" id="drugSulfa"><span>磺胺类</span></label>
+          <label class="check"><input type="checkbox" id="drugMulti"><span>≥3 种不相关药物</span></label>
+          <label class="check"><input type="checkbox" id="drugSevere"><span>严重过敏反应史</span></label>
+        </div>
+
+        <p class="group-title">食物 / 其他过敏</p>
+        <div class="grid g3 checks">
+          <label class="check"><input type="checkbox" id="foodSeafood"><span>海鲜类</span></label>
+          <label class="check"><input type="checkbox" id="foodNuts"><span>坚果类</span></label>
+          <label class="check"><input type="checkbox" id="atopy"><span>鼻炎 / 湿疹 / 慢性荨麻疹</span></label>
+        </div>
+
+        <p class="group-title">特殊疾病与状态</p>
+        <div class="grid g3 checks">
+          <label class="check"><input type="checkbox" id="mastocytosis"><span>肥大细胞增多症</span></label>
+          <label class="check"><input type="checkbox" id="hyperthyroid"><span>甲亢未控制</span></label>
+          <label class="check"><input type="checkbox" id="pheo"><span>嗜铬细胞瘤</span></label>
+          <label class="check"><input type="checkbox" id="myasthenia"><span>重症肌无力</span></label>
+          <label class="check"><input type="checkbox" id="anxiety"><span>焦虑 / 无法配合</span></label>
+          <label class="check"><input type="checkbox" id="steroid"><span>已用糖皮质激素</span></label>
+        </div>
+
+        <p class="group-title">妊娠 / 哺乳</p>
+        <div class="chips" data-radio="preg">
+          <label class="chip"><input type="radio" name="preg" value="none" checked><span>无</span></label>
+          <label class="chip"><input type="radio" name="preg" value="pregnant"><span>妊娠期</span></label>
+          <label class="chip"><input type="radio" name="preg" value="lactating"><span>哺乳期</span></label>
+        </div>
+      </section>
+
+      <!-- ---------- Step 6 ---------- -->
+      <section class="step-panel hidden" data-step="6">
+        <div class="step-head">
+          <h2>静脉通路与注射条件</h2>
+          <p>通路决定能实现的最大流率。选错会直接导致碘流率不足、图像质量下降。</p>
+        </div>
+        <div class="grid g3">
+          <label class="field"><span>留置针 / 导管 <em>*</em></span>
+            <select id="gauge" data-required>
+              <option value="">请选择…</option>
+              <option value="22">22G 外周</option>
+              <option value="20">20G 外周</option>
+              <option value="18">18G 外周</option>
+              <option value="cv">中心静脉导管</option>
+              <option value="picc">PICC</option>
+              <option value="port">输液港</option>
+            </select>
+          </label>
+          <label class="field"><span>穿刺部位</span>
+            <select id="site">
+              <option value="hand">手背 / 腕部</option>
+              <option value="forearm" selected>前臂</option>
+              <option value="antecubital">肘正中 / 贵要静脉</option>
+              <option value="other">其他</option>
+            </select>
+          </label>
+          <label class="field"><span>上肢静脉条件</span>
+            <select id="vein">
+              <option value="good">良好</option>
+              <option value="fair">一般</option>
+              <option value="poor">差 / 多次化疗</option>
+            </select>
+          </label>
+        </div>
+        <p class="group-title">相关情况（可多选）</p>
+        <div class="grid g3 checks">
+          <label class="check"><input type="checkbox" id="priorExtrav"><span>既往对比剂外渗史</span></label>
+          <label class="check"><input type="checkbox" id="chemo"><span>化疗 / 多次穿刺史</span></label>
+          <label class="check"><input type="checkbox" id="edema"><span>上肢水肿 / 淋巴回流障碍</span></label>
+        </div>
+        <div class="tip-box tip-teal"><b>典型耐受流率</b><span>18G ≥ 5 mL/s　·　20G 约 4.5 mL/s　·　22G 约 3 mL/s　·　手背 / 腕部再减 0.5 mL/s</span></div>
+      </section>
+
+      <div class="nav-bar">
+        <button class="btn btn-ghost" id="btnPrev" type="button">上一步</button>
+        <span class="nav-dots" id="navDots"></span>
+        <button class="btn btn-primary btn-next" id="btnNext" type="button">下一步</button>
+      </div>
+      <p class="small danger" id="calculationError" role="alert" hidden>暂时无法计算，请确认本地 Python 服务正在运行后重试。</p>
+    </form>
+  </main>
+</div>
+
+<!-- ============================ 结果 ============================ -->
+<section class="report hidden" id="report">
+  <div class="report-inner">
+
+    <div class="report-top">
+      <button class="btn btn-ghost" id="btnBack" type="button">← 修改输入</button>
+      <div class="report-title">
+        <h2>CT 对比剂个体化方案</h2>
+        <p id="printMeta">—</p>
+      </div>
+      <button class="btn btn-primary" id="btnPrint2" type="button">导出报告</button>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-top">
+        <span class="verdict-tag" id="verdictTag">—</span>
+        <span class="verdict-case" id="verdictCase"></span>
+      </div>
+      <h3 id="agentName">—</h3>
+      <p class="agent-sub" id="agentSub">—</p>
+      <div class="agent-meta" id="agentMeta"></div>
+    </div>
+
+    <div class="report-grid">
+      <div class="col">
+        <div class="panel">
+          <h4>给药参数</h4>
+          <div class="metrics" id="metrics"></div>
+        </div>
+        <div class="panel">
+          <h4>关键提示</h4>
+          <ul class="flags" id="flags"></ul>
+        </div>
+        <div class="panel">
+          <h4>处置方案</h4>
+          <div class="actions" id="actions"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel">
+          <h4>风险分层</h4>
+          <div class="risks" id="risks"></div>
+        </div>
+        <div class="panel">
+          <h4>备选对比剂</h4>
+          <div class="alt-list" id="alts"></div>
+        </div>
+        <div class="panel">
+          <h4>决策链路</h4>
+          <ol class="chain" id="chain"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-foot">
+      <p class="disclaimer">本结果由公开指南与药典参数推算得出（ACR Manual on Contrast Media 2024、ESUR 10.0、中国碘对比剂使用指南 2022、KDIGO 2024、CKD-EPI 2021），仅供研究参考，不能替代放射科医师与临床医师的个体化判断。使用前请核对本院对比剂说明书。</p>
+      <p class="sign">医师：____________　　核对药师 / 技师：____________　　日期：____________</p>
+    </div>
+  </div>
+</section>
+
+<div class="print-hint">请先完成 6 步评估并点击「生成方案」，再导出报告。</div>
+<script src="/3_交互.js"></script>
+</body>
+</html>
